@@ -1,4 +1,3 @@
-
 import java.util.Scanner;
 public class ServerHandler implements Runnable{
     String closer;
@@ -8,10 +7,8 @@ public class ServerHandler implements Runnable{
     public void run() {
         Scanner ns = new Scanner(System.in);
 
-        while(closer == null){
-            System.out.println("Presione cualquier tecla y ENTER para terminar los procesos del servidor");
-            closer = ns.next();
-        }
+        System.out.println("Presione cualquier tecla y ENTER para terminar los procesos del servidor");
+        closer = ns.next();
         MSPServer.serverClosed();
     }
 }

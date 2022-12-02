@@ -10,7 +10,7 @@ import java.util.Objects;
 
 public class MSPServer {
     static ArrayList<String> users;
-    static boolean closed = false;
+    static boolean closed;
 
     public static void main(String[] args){
 
@@ -27,6 +27,7 @@ public class MSPServer {
 
             Thread handler = new Thread(new ServerHandler());
             handler.start();
+            closed = false;
 
             while (!closed) {
                 clientSocket = serverSocket.accept();
@@ -42,87 +43,87 @@ public class MSPServer {
                 //recibe una línea de texto que corresponde a una funcion
                 String command = in.readLine();
 
+                //crear formas de revisar el formato
+                ArrayList<Character> checklist = new ArrayList<>();
+                String conncheck, disccheck, sendcheck, listcheck;
+                int counter;
 
-                if (command.contains("CONNECT ")) {
+                //CONNECT
+                counter = 0;
+                while(counter < command.length() && (counter < 7)){
+                    checklist.add(command.charAt(counter));
+                    counter++;
+                }
+                conncheck = checklist.toString();
+                checklist.clear();
+
+                //DISCONNECT
+                counter = 0;
+                while(counter < command.length() && (counter < 11)){
+                    checklist.add(command.charAt(counter));
+                    counter++;
+                }
+                disccheck = checklist.toString();
+                checklist.clear();
+
+                //LIST
+                counter = 0;
+                while(counter < command.length() && (counter < 5)){
+                    checklist.add(command.charAt(counter));
+                    counter++;
+                }
+                listcheck = checklist.toString();
+                checklist.clear();
+
+                //SEND #
+                counter = 0;
+                while(counter < command.length() && (counter < 6)){
+                    checklist.add(command.charAt(counter));
+                    counter++;
+                }
+                sendcheck = checklist.toString();
+                checklist.clear();
+
+                if (conncheck.equals("CONNECT ")) {
                     //checar si el comando que contiene "CONNECT " tiene el formato correcto
-                    char[] conncheck = new char[8];
-                    for (int i = 0; i < 8; i++) {
-                        conncheck[i] = command.charAt(i);
+                    ArrayList<Character> userlist = new ArrayList<>();
+                    for (int i = 8; i < command.length(); i++) {
+                        userlist.add(command.charAt(i));
                     }
-                    if (Objects.equals(Arrays.toString(conncheck), "CONNECT ") && (command.length() > 8)) {
-                        ArrayList<Character> userlist = new ArrayList<>();
-                        for (int i = 8; i < command.length(); i++) {
-                            userlist.add(command.charAt(i));
-                        }
-                        StringBuilder sb = new StringBuilder();
-                        for (Character u : userlist) {
-                            sb.append(u);
-                        }
-                        String username = sb.toString();
-                        users.add(username);
-                    }
+                    String username = userlist.toString();
+                    users.add(username);
                 }
-                if (command.contains("DISCONNECT ")) {
+                if (disccheck.equals("DISCONNECT ")) {
                     //checar si el comando que contiene "DISCONNECT " tiene el formato correcto
-                    char[] disccheck = new char[11];
-                    for (int i = 0; i < 11; i++) {
-                        disccheck[i] = command.charAt(i);
+                    ArrayList<Character> userlist = new ArrayList<>();
+                    for (int i = 11; i < command.length(); i++) {
+                        userlist.add(command.charAt(i));
                     }
-                    if (Objects.equals(Arrays.toString(disccheck), "DISCONNECT ") && (command.length() > 11)) {
-                        ArrayList<Character> userlist = new ArrayList<>();
-                        for (int i = 11; i < command.length(); i++) {
-                            userlist.add(command.charAt(i));
-                        }
-                        StringBuilder sb = new StringBuilder();
-                        for (Character u : userlist) {
-                            sb.append(u);
-                        }
-                        String username = sb.toString();
-                        users.remove(username);
-                    }
+                    String username = userlist.toString();
+                    users.remove(username);
                 }
-                if (command.contains("LIST ")) {
+                if (listcheck.equals("LIST ")) {
                     //checar si el comando que contiene "LIST " tiene el formato correcto
-
-                    char[] listcheck = new char[5];
-                    for (int i = 0; i < 5; i++) {
-                        listcheck[i] = command.charAt(i);
+                    ArrayList<Character> atlist = new ArrayList<>();
+                    for (int i = 5; i < command.length(); i++) {
+                        atlist.add(command.charAt(i));
                     }
-                    if (Objects.equals(Arrays.toString(listcheck), "DISCONNECT ") && (command.length() > 5)) {
-
-                        ArrayList<Character> atlist = new ArrayList<>();
-                        for (int i = 5; i < command.length(); i++) {
-                            atlist.add(command.charAt(i));
-                        }
-                        StringBuilder sb = new StringBuilder();
-                        for (Character u : atlist) {
-                            sb.append(u);
-                        }
-                        String atuser = sb.toString();
-                        String list = users.toString();
-                        out.println('@' + atuser + " LIST " + list);
-                    }
-                    if (command.contains("SEND #") && command.contains("@")) {
-                        //checar si el comando que contiene "SEND #" tiene el formato correcto
-                        char[] sendcheck = new char[6];
-                        for (int i = 0; i < 6; i++) {
-                            sendcheck[i] = command.charAt(i);
-                        }
-                        String send = Arrays.toString(sendcheck);
-
-                        if (send.equals("SEND #") && (command.length() > 6)) {
-                            ArrayList<Character> messagelist = new ArrayList<>();
-                            int count = 6;
-                            while (count < command.length()) {
-                                messagelist.add(command.charAt(count));
-                                count++;
-                            }
-                            String message = messagelist.toString();
-                            out.println(message);
-                        }
-                    }
-                    clientSocket.close();
+                    String atuser = atlist.toString();
+                    String list = users.toString();
+                    out.println('@' + atuser + " LIST " + list);
                 }
+                if (sendcheck.equals("SEND #")) {
+                    //checar si el comando que contiene "SEND #" tiene el formato correcto
+                    ArrayList<Character> messagelist = new ArrayList<>();
+                    int count = 6;
+                    while (count < command.length()) {
+                        messagelist.add(command.charAt(count));
+                        count++;
+                    }
+                    String message = messagelist.toString();
+                    out.println(message);
+                }
+                clientSocket.close();
             }
         } catch(IOException e){
             System.out.println("Exception caught when trying to listen on port "
@@ -142,6 +143,7 @@ public class MSPServer {
     }
 
     public static void serverClosed(){
-        closed = true;
+        System.out.println("Fin de operaciones");
+        System.exit(0);
     }
 }
